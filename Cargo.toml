@@ -1,0 +1,30 @@
+[package]
+name = "rosu-pp"
+version = "2.0.0"
+edition = "2021"
+authors = ["MaxOhn <ohn.m@hotmail.de>", "9down <artemyakovle2.0@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/noemiowo/miausu-pp-rs"
+documentation = "https://docs.rs/rosu-pp/"
+description = "Difficulty and performance calculation for osu!"
+keywords = ["osu", "pp", "stars", "performance", "difficulty"]
+
+[features]
+default = []
+raw_strains = []
+sync = []
+tracing = ["rosu-map/tracing"]
+
+[dependencies]
+rosu-map = { version = "0.2.0" }
+rosu-mods = { version = "0.2.0" }
+
+[dev-dependencies]
+proptest = "1.4.0"
+
+[profile.test.package.proptest]
+opt-level = 3
+
+[profile.test.package.rand_chacha]
+opt-level = 3
