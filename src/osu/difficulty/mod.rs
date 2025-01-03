@@ -101,31 +101,92 @@ impl OsuDifficultySetup {
     }
 }
 
-pub struct DifficultyValues {
-    pub skills: OsuSkills,
-    pub attrs: OsuDifficultyAttributes,
+impl DifficultyValues {
+    pub fn eval(
+        attrs: &mut OsuDifficultyAttributes,
+        mods: &GameMods,
+        aim: &UsedOsuStrainSkills<DifficultyValue>,
+        aim_no_sliders: &UsedOsuStrainSkills<DifficultyValue>,
+        speed: &UsedOsuStrainSkills<DifficultyValue>,
+        speed_relevant_note_count: f64,
+        flashlight_difficulty_value: f64,
+    ) {
+        let mut aim_rating = aim.difficulty_value().sqrt() * DIFFICULTY_MULTIPLIER;
+        let aim_rating_no_sliders =
+            aim_no_sliders.difficulty_value().sqrt() * DIFFICULTY_MULTIPLIER;
+        let mut speed_rating = speed.difficulty_value().sqrt() * DIFFICULTY_MULTIPLIER;
+        let mut flashlight_rating = flashlight_difficulty_value.sqrt() * DIFFICULTY_MULTIPLIER;
+
+        let slider_factor = if aim_rating > 0.0 {
+            aim_rating_no_sliders / aim_rating
+        } else {
+            1.0
+        };
+
+        let aim_difficult_strain_count = aim.count_difficult_strains();
+        let speed_difficult_strain_count = speed.count_difficult_strains();
+
+        if mods.td() {
+            aim_rating = aim_rating.powf(0.8);
+            flashlight_rating = flashlight_rating.powf(0.8);
+        }
+
+        if mods.rx() {
+            aim_rating *= 0.0;
+            speed_rating = 1.12;
+            flashlight_rating *= 0.9;
+        }
+
+        let base_aim_performance = OsuStrainSkill::difficulty_to_performance(aim_rating);
+        let base_speed_performance = OsuStrainSkill::difficulty_to_performance(speed_rating);
+
+        let base_flashlight_performance = if mods.fl() {
+            Flashlight::difficulty_to_performance(flashlight_rating)
+        } else {
+            0.0
+        };
+
+        let mut base_performance = ((base_aim_performance).powf(1.1)
+            + (base_speed_performance).powf(1.1)
+            + (base_flashlight_performance).powf(1.1))
+        .powf(1.0 / 1.1);
+
+        // Apply creator-based pp adjustments
+        if self.map.creator == "quantumvortex" || self.map.creator == "Plasma" || self.map.creator == "kselon" || self.map.creator == "NekoShabeta" || self.map.creator == "multiplied" {
+            base_performance *= 0.82;
+        }
+
+        if self.map.creator == "None1637" {
+            base_performance *= 0.682;
+        }
+
+        // Apply title-based pp adjustments
+        base_performance *= match self.map.title.to_lowercase().as_str() {
+            title if title.contains("ano's") => 0.57,
+            title if title.contains("Kaat") => 0.8,
+            title if title.contains("Jump pack") => 0.85,
+            title if title.contains("Speed-Up Map Pack") => 0.92,
+            _ => 1.0,
+        };
+
+        let star_rating = if base_performance > 0.00001 {
+            PERFORMANCE_BASE_MULTIPLIER.cbrt()
+                * 0.027
+                * ((100_000.0 / 2.0_f64.powf(1.0 / 1.1) * base_performance).cbrt() + 4.0)
+        } else {
+            0.0
+        };
+
+        attrs.aim = aim_rating;
+        attrs.speed = speed_rating;
+        attrs.flashlight = flashlight_rating;
+        attrs.slider_factor = slider_factor;
+        attrs.aim_difficult_strain_count = aim_difficult_strain_count;
+        attrs.speed_difficult_strain_count = speed_difficult_strain_count;
+        attrs.stars = star_rating;
+        attrs.speed_note_count = speed_relevant_note_count;
+    }
 }
-
-if self.map.creator == "quantumvortex" || self.map.creator == "Plasma" || self.map.creator == "kselon" || self.map.creator == "NekoShabeta" || self.map.creator == "multiplied"{
-    pp *= 0.82;
-}
-
-if self.map.creator == "None1637"{
-    pp *= 0.682;
-}
-
-pp *= match self.map.title.to_lowercase().as_str() {
-
-    title if title.contains("ano's") => 0.57,
-    
-    title if title.contains("Kaat") => 0.8,
-
-    title if title.contains("Jump pack") => 0.85,
-
-    title if title.contains("Speed-Up Map Pack") => 0.92,
-
-    _ => 1.0,
-};
 
 impl DifficultyValues {
     pub fn calculate(difficulty: &Difficulty, map: &Beatmap) -> Self {
