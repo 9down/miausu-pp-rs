@@ -166,6 +166,8 @@ impl DifficultyValues {
             title if title.contains("Kaat") => 0.8,
             title if title.contains("Jump pack") => 0.85,
             title if title.contains("Speed-Up Map Pack") => 0.92,
+            title if title.contains("Exile") => 0.73,
+            title if title.contains("exile") => 0.73,
             _ => 1.0,
         };
 
