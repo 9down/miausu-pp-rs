@@ -137,6 +137,14 @@ impl DifficultyValues {
             flashlight_rating *= 0.9;
         }
 
+        if attrs.cs > 8.5 {
+            speed_rating *= 1.02;
+            aim_rating *= 1.12;
+        } else {
+            speed_rating *= 0.0;
+            aim_rating *= 0.0;
+        }
+
         let base_aim_performance = OsuStrainSkill::difficulty_to_performance(aim_rating);
         let base_speed_performance = OsuStrainSkill::difficulty_to_performance(speed_rating);
 
